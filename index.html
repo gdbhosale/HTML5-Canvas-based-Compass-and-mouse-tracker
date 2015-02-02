@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml">
+	<head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# website: http://ogp.me/ns/website#">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>HTML5 Canvas based Compass and mouse tracker - Dwij Nuggets</title>
+		<meta name="description" content="HTML5 Canvas based Compass and mouse tracker" />
+		<meta name="keywords" content="compass,html5,canvas,mouse,pointer,google,map,google,map,directions,css,css3,flatdesign,material,design,navigation,transition,ui,ux" />
+		<meta name="author" content="Dwij IT Solutions" />
+		
+		<link href='http://fonts.googleapis.com/css?family=Roboto:400,100,300,500' rel='stylesheet' type='text/css'>
+
+		<link href="css/normalize.css" rel="stylesheet" />
+		
+		<!------- Code Starts here ------->
+		<style>
+			body{margin:0;padding:0px;}
+			#mapCanvas {
+				height: 100%;
+				width: 100%;
+				margin: 0px;
+				padding: 0px;
+				z-index: 1;
+				position: fixed !important;
+				top: 0px;
+				left: 0px;
+			}
+			#mainCanvas{
+				background:rgba(255, 255, 255, 0.2);
+				z-index: 2;
+				position: fixed !important;
+				opacity: 0.7;
+				top: 0px;
+				left: 0px;
+			}
+			#pointer{
+				z-index: 3;
+				position: fixed !important;
+			}
+		</style>
+		<!------- Code ends here ------->
+	</head>
+
+	<body>
+		
+		<div class="container" style="position:absolute;z-index:11;margin:5%;width:90%;">
+			<div class="desc" style="background:rgba(255, 255, 255, 0.8);padding: 20px;border: solid 1px #949494;border-radius:15px;margin:10px auto;">
+				<h2>HTML5 Canvas based Compass and mouse tracker</h2>
+				<p>
+					This is a concept based on Map &amp; Compass created using HTML5 Canvas, CSS3 &amp; Javascipt with modified <a href="http://code.google.com/p/jqueryrotate">jQueryRotate</a> Library.<br><br>
+                    Created by <a href="http://ganeshbhosale.com" target="_blank">Ganesh Bhosale</a> at <a href="http://dwijitsolutions.com" target="_blank">Dwij IT Solutions</a>
+				</p>
+				<p>
+					<b>Keywords:</b>
+					<div class="keywords">
+						<a href="#">compass</a>
+						<a href="#">html5</a>
+						<a href="#">canvas</a>
+						<a href="#">mouse</a>
+						<a href="#">pointer</a>
+						<a href="#">google map</a>
+						<a href="#">google map</a>
+						<a href="#">directions</a>
+						<a href="#">css</a>
+						<a href="#">css3</a>
+						<a href="#">flatdesign</a>
+						<a href="#">material design</a>
+						<a href="#">navigation</a>
+						<a href="#">transition</a>
+						<a href="#">ui</a>
+						<a href="#">ux</a>
+					</div>
+				</p>
+				<center><button class="btn closeWindow" >Close this window</button></center>
+			</div>
+		</div>
+		
+		<!------- Code Starts here ------->
+		
+		<div id="mapCanvas"></div>
+		<canvas id="mainCanvas"></canvas>
+		<canvas id="pointer" width="40" height="300"></canvas>
+		<div id="container"></div>
+
+		<script src="js/jquery-2.0.3.min.js"></script>
+		<script type="text/javascript" src="js/jQueryRotate.js"></script>
+		<script>
+			var sector = 0;
+			var animDelay = 2000;
+			var CANVAS_WIDTH = 480;		// Canvas width
+			var CANVAS_HEIGHT = 480;	// Canvas height
+			var FPS = 30;				// Frames per second
+			var canvasCenterX = CANVAS_WIDTH / 2;
+			var canvasCenterY = CANVAS_HEIGHT / 2;
+			var mouse = {x:0,y:0};
+			var sectors = 8;
+
+			var box;
+			var canvasElem;
+			var c;
+			var cw = 0;
+			var ch = 0;
+
+			var pointerElem;
+			var p;
+			
+			$(function() {
+				box = $("#mainCanvas")
+				canvasElem = document.getElementById('mainCanvas');
+				c = canvasElem.getContext("2d");
+				pointerElem = document.getElementById('pointer');
+				p = pointerElem.getContext("2d");
+
+
+				var CANVAS_WIDTH = $(document).width();
+				var CANVAS_HEIGHT = $(document).height();
+
+				var boxCenter = [box.offset().left+box.width()/2, box.offset().top+box.height()/2];
+				var mainAngle = Math.abs(Math.atan2(0 - boxCenter[0], - (0 - boxCenter[1]) )*(180/Math.PI));
+
+				var mainCanvas = {
+					draw: function() {
+
+						c.fillStyle = "#58B8EB";
+						c.fillStyle = "#F00";
+						
+						c.beginPath();
+						c.fillStyle = "#0FDDF5";
+						c.arc(cw/2, ch/2, 220, 0, 360, false);
+						c.fill();
+						c.beginPath();
+						c.fillStyle = "#AFEEF9";
+						c.arc(cw/2, ch/2, 200, 0, 360, false);
+						c.fill();
+
+						//console.log(cw+" "+ch);
+						c.beginPath();
+						c.moveTo(cw/2, 0);
+						c.lineTo(cw/2, ch);
+
+						c.moveTo(0, ch/2);
+						c.lineTo(cw, ch/2);
+
+						c.moveTo(0, 0);
+						c.lineTo(cw, ch);
+
+						c.moveTo(0, ch);
+						c.lineTo(cw, 0);
+
+						c.strokeStyle = "#58B8EB";
+						c.stroke();
+					}
+				};
+				
+				var pointer = {
+					pw: 40,
+					ph: pointerElem.height,
+					update: function() {
+						var angle = parseInt(Math.atan2(mouse.x- boxCenter[0], - (mouse.y- boxCenter[1]) )*(180/Math.PI));
+						var fullAngle = angle;
+						if(angle < 0) fullAngle = parseInt(180+(180+angle));
+
+						if(fullAngle - $("#pointer").getRotateAngle() > 270) {
+							$("#pointer").rotate({angle:angle,duration:animDelay});
+						} else {
+							$("#pointer").rotate({angle:fullAngle,duration:animDelay});
+						}
+						
+						if(angle > -(mainAngle) && angle < 0) {
+							sector = 2;
+
+						} else if(angle > 0 && angle < mainAngle) {
+							sector = 3;
+						} else if(angle > mainAngle && angle < 90) {
+							sector = 4;
+						} else if(angle > 90 && angle < 90+(90-mainAngle)) {
+							sector = 5;
+						} else if(angle > 90+(90-mainAngle) && angle < 180) {
+							sector = 6;
+						} else if(angle > -90 && angle < -mainAngle) {
+							sector = 1;
+						} else if(angle > -90-(90-mainAngle) && angle < -90) {
+							sector = 8;
+						} else if(angle > -180 && angle < -90-(90-mainAngle)) {
+							sector = 7;
+						}
+						//console.log("angle:"+parseInt(mainAngle)+": "+sector+"  "+angle+" = "+fullAngle+" ["+mouse.x+","+mouse.y+"]"+(fullAngle-$("#pointer").getRotateAngle()));
+					},
+					draw: function(){
+
+						p.beginPath();
+						p.moveTo(this.pw/2, 0);
+						p.lineTo(0, this.ph/2);
+						p.lineTo(this.pw/2, this.ph/2);
+						p.lineTo(this.pw/2, 0);
+						p.fillStyle = "#FF532B";
+						p.fill();
+						// 2
+						p.beginPath();
+						p.moveTo(this.pw/2, this.ph/2);
+						p.lineTo(this.pw/2, this.ph);
+						p.lineTo(0, this.ph/2);
+						p.lineTo(this.pw/2, this.ph/2);
+						p.fillStyle = "#DAE1EF";
+						p.fill();
+						// 3
+						p.beginPath();
+						p.moveTo(this.pw/2, 0);
+						p.lineTo(this.pw/2, this.ph/2);
+						p.lineTo(this.pw, this.ph/2);
+						p.lineTo(this.pw/2, 0);
+						p.fillStyle = "#DC052C";
+						p.fill();
+						// 4
+						p.beginPath();
+						p.moveTo(this.pw/2, this.ph/2);
+						p.lineTo(this.pw/2, this.ph);
+						p.lineTo(this.pw, this.ph/2);
+						p.lineTo(this.pw/2, this.ph/2);
+						p.fillStyle = "#91AEDC";
+						p.fill();
+					}
+				};
+				
+				var onResize = function() {
+					CANVAS_WIDTH = $(window).width();
+					CANVAS_HEIGHT = $(window).height();
+					cw = canvasElem.width = CANVAS_WIDTH;
+					ch = canvasElem.height = CANVAS_HEIGHT;
+					$("#mainCanvas").width(CANVAS_WIDTH);
+					$("#mainCanvas").height(CANVAS_HEIGHT);
+					$("#pointer").css("top", (CANVAS_HEIGHT/2)-$("#pointer").height()/2);
+					$("#pointer").css("left", (CANVAS_WIDTH/2)-pointer.pw/2);
+					//console.log(CANVAS_WIDTH+" "+CANVAS_HEIGHT);
+					boxCenter = [box.offset().left+box.width()/2, box.offset().top+box.height()/2];
+					mainAngle = Math.abs(Math.atan2(0 - boxCenter[0], - (0 - boxCenter[1]) )*(180/Math.PI));
+
+					pointer.draw();
+					mainCanvas.draw();
+					
+				};
+
+				$(window).resize(function() {onResize();});
+
+				$("#mainCanvas").mousemove(function(e) {
+					mouse.x = e.pageX;
+					mouse.y = e.pageY;
+				});
+
+				onResize();
+
+				pointer.draw();
+				mainCanvas.draw();
+				setInterval(function() {
+					pointer.update();
+				}, 1000/FPS);
+			});
+		</script>
+		<script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+		<script>
+			var map;
+			function initialize() {
+				var mapOptions = {
+					zoom: 11,
+					center: new google.maps.LatLng(18.520064, 73.855434),
+					styles: [{"featureType":"landscape","stylers":[{"saturation":-100},{"lightness":65},{"visibility":"on"}]},{"featureType":"poi","stylers":[{"saturation":-100},{"lightness":51},{"visibility":"simplified"}]},{"featureType":"road.highway","stylers":[{"saturation":-100},{"visibility":"simplified"}]},{"featureType":"road.arterial","stylers":[{"saturation":-100},{"lightness":30},{"visibility":"on"}]},{"featureType":"road.local","stylers":[{"saturation":-100},{"lightness":40},{"visibility":"on"}]},{"featureType":"transit","stylers":[{"saturation":-100},{"visibility":"simplified"}]},{"featureType":"administrative.province","stylers":[{"visibility":"off"}]},{"featureType":"water","elementType":"labels","stylers":[{"visibility":"on"},{"lightness":-25},{"saturation":-100}]},{"featureType":"water","elementType":"geometry","stylers":[{"hue":"#ffff00"},{"lightness":-25},{"saturation":-97}]}],
+					panControl: false,
+					zoomControl: false,
+					mapTypeControl: false,
+					scaleControl: false,
+					streetViewControl: false,
+					overviewMapControl: false
+				};
+				map = new google.maps.Map(document.getElementById('mapCanvas'),
+										  mapOptions);
+			}
+			google.maps.event.addDomListener(window, 'load', initialize);
+		</script>
+		
+		<!------- Code ends here ------->
+		
+		<script>
+			$(function() {
+				$(".btn.closeWindow").on("click", function(){
+					$(".container").hide();
+				});
+				$(".showWindow").on("click", function(){
+					$(".container").show();
+				});
+			});
+		</script>
+	</body>
+</html>
